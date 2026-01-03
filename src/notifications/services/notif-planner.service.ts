@@ -7,7 +7,6 @@ import { Subscription } from '../../subscriptions/entities/subscription.entity';
 import { User } from '../../subscriptions/entities/user.entity';
 import { buildSafeTitleForTelegram } from '../../common/utils/text.util';
 import {
-  normalizeForMatch,
   tokenizeTitleForMatch,
   tokenizeQueryForMatch,
   fuzzyTokenMatch,
@@ -77,7 +76,12 @@ export class NotifPlannerService {
       const tokens = tokenizeQueryForMatch(q);
       if (!tokens.length) return false;
       const tTokens = titleTokens ?? tokenizeTitleForMatch(act.title);
-      return tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
+      // If the query produces multiple tokens, treat it as a list of alternatives -> match ANY token.
+      // Single-token queries are effectively the same under ANY vs ALL semantics.
+      const matchAny = tokens.length > 1;
+      return matchAny
+        ? tokens.some(tok => fuzzyTokenMatch(tok, tTokens))
+        : tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
     }
     return false;
   }
