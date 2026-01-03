@@ -76,10 +76,10 @@ export class NotifPlannerService {
       const tokens = tokenizeQueryForMatch(q);
       if (!tokens.length) return false;
       const tTokens = titleTokens ?? tokenizeTitleForMatch(act.title);
-      // If user provided separators (comma/semicolon/slash/pipe/plus), treat it as a list -> match ANY token.
-      // Otherwise treat it as a phrase -> require ALL tokens.
-      const hasListSeparators = /[,+/;|]/.test(q);
-      return hasListSeparators
+      // If the query produces multiple tokens, treat it as a list of alternatives -> match ANY token.
+      // Single-token queries are effectively the same under ANY vs ALL semantics.
+      const matchAny = tokens.length > 1;
+      return matchAny
         ? tokens.some(tok => fuzzyTokenMatch(tok, tTokens))
         : tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
     }
