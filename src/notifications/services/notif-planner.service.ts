@@ -7,7 +7,6 @@ import { Subscription } from '../../subscriptions/entities/subscription.entity';
 import { User } from '../../subscriptions/entities/user.entity';
 import { buildSafeTitleForTelegram } from '../../common/utils/text.util';
 import {
-  normalizeForMatch,
   tokenizeTitleForMatch,
   tokenizeQueryForMatch,
   fuzzyTokenMatch,
@@ -77,7 +76,12 @@ export class NotifPlannerService {
       const tokens = tokenizeQueryForMatch(q);
       if (!tokens.length) return false;
       const tTokens = titleTokens ?? tokenizeTitleForMatch(act.title);
-      return tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
+      // If user provided separators (comma/semicolon/slash/pipe/plus), treat it as a list -> match ANY token.
+      // Otherwise treat it as a phrase -> require ALL tokens.
+      const hasListSeparators = /[,+/;|]/.test(q);
+      return hasListSeparators
+        ? tokens.some(tok => fuzzyTokenMatch(tok, tTokens))
+        : tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
     }
     return false;
   }
