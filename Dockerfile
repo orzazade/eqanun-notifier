@@ -1,9 +1,10 @@
+# syntax=docker/dockerfile:1
 # --- Build stage -------------------------------------------------------------
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY tsconfig*.json nest-cli.json ./
 COPY src ./src
@@ -23,7 +24,7 @@ EXPOSE 3000
 
 # Copy only what we need
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
